@@ -1,0 +1,3 @@
+[submodule "tucker3d"]
+	path = tucker3d
+	url = https://github.com/rakhuba/tucker3d
