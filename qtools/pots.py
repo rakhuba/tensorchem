@@ -1,8 +1,8 @@
 import numpy as np
-from math import pi
+from math import pi, gamma
 import tucker3d as tuck
 
-def coulomb(x, vec, ind, eps):  # 1/|r-vec| in Tucker format
+def coulomb(x, vec, ind, eps, beta=1.0):  # 1/|r-vec|**beta in Tucker format
 
     if ind == 6:
         a, b, r = -15., 10, 80
@@ -23,7 +23,7 @@ def coulomb(x, vec, ind, eps):  # 1/|r-vec| in Tucker format
 
     w = np.zeros(r, dtype = np.float64)
     for alpha in xrange(r):
-        w[alpha] = 2*h * np.exp(s[alpha]) / np.sqrt(pi)
+        w[alpha] = 2*h * np.exp(beta*s[alpha]) / gamma(beta/2)
     w[0]   = w[0]/2
     w[r-1] = w[r-1]/2
 
@@ -33,9 +33,9 @@ def coulomb(x, vec, ind, eps):  # 1/|r-vec| in Tucker format
     U3 = np.zeros((N[0], r), dtype = np.float64)
 
     for alpha in xrange(r):
-        U1[:, alpha] = np.exp(-(x - vec[0])**2 * np.exp(2*s[alpha]))
-        U2[:, alpha] = np.exp(-(x - vec[1])**2 * np.exp(2*s[alpha]))
-        U3[:, alpha] = np.exp(-(x - vec[2])**2 * np.exp(2*s[alpha]))
+        U1[:, alpha] = np.exp(-(x-vec[0])**2 * np.exp(2*s[alpha]))
+        U2[:, alpha] = np.exp(-(x-vec[1])**2 * np.exp(2*s[alpha]))
+        U3[:, alpha] = np.exp(-(x-vec[2])**2 * np.exp(2*s[alpha]))
 
     
     newton = tuck.can2tuck(w, U1, U2, U3)

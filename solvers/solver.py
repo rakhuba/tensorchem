@@ -78,6 +78,7 @@ class solver:
         N = len(self.params.grid)
         Norb = self.molecule.orbitals
         num_atoms = self.molecule.num_atoms
+        
         pot_coulomb = tuck.zeros((N, N, N))
         for i in xrange(num_atoms):
             vec = molecule.atoms[i].rad
@@ -85,6 +86,55 @@ class solver:
             pot_coulomb = pot_coulomb - charge * qt.pots.coulomb(x, vec, self.params.ind, self.params.eps)
             pot_coulomb = tuck.round(pot_coulomb, self.params.eps)
         self.pots.coulomb = pot_coulomb
+
+
+    def gradient_diatomic(self):
+
+        # pot squared
+
+        molecule = self.molecule
+        x = self.params.grid
+        N = len(self.params.grid)
+        Norb = self.molecule.orbitals
+        num_atoms = self.molecule.num_atoms
+        
+        d_coulomb = tuck.zeros((N, N, N))
+        tensor_x = tuck.ones((N, N, N))
+        tensor_x.u[0] = tensor_x.u[0] * x
+        for i in xrange(num_atoms):
+            vec = molecule.atoms[i].rad
+            charge = molecule.atoms[i].charge
+            tensor_x = charge*tuck.round(vec[0]*tuck.ones((N, N, N)) - tensor_x, self.params.eps)
+            pot_squared = qt.pots.coulomb(x, vec, self.params.ind, self.params.eps, beta=2.0)
+            d_coulomb = tuck.round(d_coulomb, self.params.eps)
+        
+            d_coulomb -= tuck.cross.multifun([tensor_x, pot_squared], self.params.eps, lambda x: x[0]*x[1])
+
+        self.get_rho()
+        
+        
+        
+        dE_nuc = 0.0
+        for i in xrange(num_atoms):
+            vec_i = molecule.atoms[i].rad
+            charge_i = molecule.atoms[i].charge
+            for j in xrange(i):
+                vec_j = molecule.atoms[j].rad
+                charge_j = molecule.atoms[j].charge
+                dE_nuc = (dE_nuc - (vec_i[0] - vec_j[0])*charge_i*charge_j/
+                np.sqrt((vec_i[0] - vec_j[0])**2 + (vec_i[1] - vec_j[1])**2 + (vec_i[2] - vec_j[2])**2)**3)
+
+
+    def get_rho(self):
+
+        self.rho = tuck.zeros(self.phi[0].n)
+        for i in xrange(len(self.phi)):
+            self.rho += tuck.cross.multifun([self.phi[i]], self.params.eps, lambda x: x[0]**2)
+            self.rho = tuck.round(self.rho, self.params.eps)
+
+
+
+
 
 
 
