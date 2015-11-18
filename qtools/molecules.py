@@ -25,8 +25,8 @@ def molecule(name, charge = 0, rad = 0): # Warning: rad must be in angstrem
     elif name == 'H2':
 
         charge = [1., 1.]
-        rad = np.array([0.3669,  0.000000,  0.0,
-                        -0.3669,  0.000000, 0.0])
+        rad = np.array([0.7/const,  0.000000,  0.0,
+                        -0.7/const,  0.000000, 0.0])
         molecule.energy = -1.1336286746
 
     elif name == 'HeH+':

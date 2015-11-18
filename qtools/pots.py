@@ -28,9 +28,9 @@ def coulomb(x, vec, ind, eps, beta=1.0):  # 1/|r-vec|**beta in Tucker format
     w[r-1] = w[r-1]/2
 
 
-    U1 = np.zeros((N[0], r), dtype = np.float64)
-    U2 = np.zeros((N[0], r), dtype = np.float64)
-    U3 = np.zeros((N[0], r), dtype = np.float64)
+    U1 = np.zeros((N[0], r), dtype=np.float64)
+    U2 = np.zeros((N[0], r), dtype=np.float64)
+    U3 = np.zeros((N[0], r), dtype=np.float64)
 
     for alpha in xrange(r):
         U1[:, alpha] = np.exp(-(x-vec[0])**2 * np.exp(2*s[alpha]))
