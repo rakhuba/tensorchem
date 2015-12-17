@@ -88,7 +88,7 @@ class solver:
         self.pots.coulomb = pot_coulomb
 
 
-    def gradient_diatomic(self):
+    def gradient_diatomic(self, smoothing=0.01):
 
         # pot squared
         #tensor_x = charge*tuck.round(vec[0]*tuck.ones((N, N, N)) - tensor_x, self.params.eps)
@@ -102,33 +102,38 @@ class solver:
         Norb = self.molecule.orbitals
         num_atoms = self.molecule.num_atoms
         
-        d_coulomb = tuck.zeros((N, N, N))
-        tensor_x = tuck.ones((N, N, N))
-        tensor_x.u[0] = tensor_x.u[0] * x.reshape(-1, 1)
         i = 0
         vec = molecule.atoms[i].rad
         charge = molecule.atoms[i].charge
         def fun_coulomb_squared((i, j, k)):
-            return charge*(x[i] - vec[0]) / np.sqrt((vec[0] - x[i])**2 + (vec[1] - x[j])**2 + (vec[2] - x[k])**2)**(3)
-        d_coulomb = tuck.cross.cross3d(fun_coulomb_squared, N, self.params.eps/100)
+            r = np.sqrt((vec[0] - x[i])**2 + (vec[1] - x[j])**2 + (vec[2] - x[k])**2)
+            return charge*(x[i] - vec[0]) / r / (-smoothed_coulomb_derivative(r/smoothing))/smoothing**2
+        d_coulomb = tuck.cross.cross3d(fun_coulomb_squared, N, self.params.eps)
         d_coulomb = tuck.round(d_coulomb, self.params.eps)
         
 
         self.get_rho()
-        d_coulomb = tuck.cross.multifun([self.rho, d_coulomb], self.params.eps, lambda x: x[0]*x[1])
-        
         
         dE_nuc = 0.0
+        j = 1
+        i = 0
         vec_i = molecule.atoms[i].rad
         charge_i = molecule.atoms[i].charge
-        j = 1
         vec_j = molecule.atoms[j].rad
         charge_j = molecule.atoms[j].charge
-        dE_nuc = (dE_nuc - (vec_i[0] - vec_j[0])*charge_i*charge_j/
+        dE_nuc = (dE_nuc + (vec_i[0] - vec_j[0])*charge_i*charge_j/
                   np.sqrt((vec_i[0] - vec_j[0])**2 + (vec_i[1] - vec_j[1])**2 + (vec_i[2] - vec_j[2])**2)**3)
 
-        return tuck.dot(d_coulomb, tuck.ones((N, N, N)))*(x[1]-x[0])**3, dE_nuc
 
+        return tuck.dot(d_coulomb, 2*self.rho)*(x[1]-x[0])**3 + dE_nuc
+
+    def smoothed_coulomb_derivative(r):
+        if r>=6:
+            return -1.0/r**2
+        elif r<6 and r>=0.1:
+            return 2*np.exp(-r**2)/np.sqrt(np.pi)/r - erf(r)/r**2 - 1.0/3/np.sqrt(np.pi) * (2*r*np.exp(-r**2) + 128*r*np.exp(-4*r**2))
+        else:
+            return -4.0/3*r + 4.0/5*r**3 - 2.0/7*r**5 + 2.0/27*r**7 - 1.0/66*r**9 - 1.0/3/np.sqrt(np.pi) * (2*r*np.exp(-r**2) + 128*r*np.exp(-4*r**2))
 
     def get_rho(self):
 
